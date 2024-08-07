@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const activitySchema = mongoose.Schema({
-  organizer : String,
-  //organizer : { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
+  //organizer : String,
+  organizer : { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
   name : String,
   location: {
     street : {type : String, default: ''},
