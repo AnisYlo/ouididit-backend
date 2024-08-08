@@ -4,10 +4,11 @@ var router = express.Router();
 require('../models/connection');
 const Activity = require('../models/activities');
 const User = require('../models/users');
+const Participant = require('../models/participants');
 const { checkBody } = require('../modules/checkBody');
 
 
-// GET : activity informations 
+// GET : activity informations //
 router.get('/:activityId', async (req, res) => {
     if(req.params.activityId.length === 24){ // mongoDB => _id length 24
         Activity.findById(req.params.activityId)
@@ -36,8 +37,49 @@ router.post('/', (req, res) => {
     }).then(()=>{
         const newActivity = new Activity (activity);
         newActivity.save()
-        .then(data=> data !==null ? res.json({result: true, activityId: data}) : res.status(500).json({result: false, error: "Activity not create"}));
+        .then(data=> data !==null ? res.json({result: true, activity: data}) : res.status(500).json({result: false, error: "Activity not create"}));
     });
+});
+
+
+// POST : Add participants to activity //
+router.post('/participants/:activityId', (req, res) => {
+    if (!checkBody(req.body, ['participants'])) {
+        res.json({ result: false, error: 'Missing or empty fields' });
+        return;
+    }
+    // Store error and mail in addError 
+    let addError = {result : true, participants : []};
+
+    // For each participant in array 
+    req.body.participants.map( participant =>{
+        User.findOne({ email: participant.email }).select('_id')
+        .then(data => {
+            if (data === null) { // If user not exist, create them in DB
+                const newUser = new User({
+                    email: participant.email,
+                });
+                newUser.save()
+                .then(newUser => { 
+                    return newUser._id });
+            } else { return data._id }
+        })
+        .then(participantId => {
+            const newParticipant = new Participant ({
+                user : participantId,
+                activity: req.params.activityId,
+                status: participant.status, 
+            })
+            newParticipant.save()
+            .then(data => { // Check add participant, if error : save participant who create error
+                if (data === null){
+                    addError.result =false;
+                    addError.participants.push(participant.email);
+                }
+            });
+        });
+    });
+    addError.result ? res.json({result: true}) : res.status(500).json({result: false, error: "Error during added participants"});
 });
 
 module.exports = router;
