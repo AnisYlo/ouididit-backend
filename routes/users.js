@@ -7,9 +7,20 @@ const { checkBody } = require("../modules/checkBody");
 const uid2 = require("uid2");
 const bcrypt = require("bcrypt");
 
+router.get("/:token", (req, res) => {
+User.findOne({token: req.params.token}).then((data) => {
+  if (data){
+    res.json({result: true, token: data.token})
+  }else{
+    res.json({result: false})
+  }
+})
+
+}) 
+
 //sign up and verify if missing or empty fields -tested-
 router.post("/signup", (req, res) => {
-  if (!checkBody(req.body, ["email", "password"])) {
+  if (!checkBody(req.body, ["email", "password", "username"])) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
@@ -21,14 +32,17 @@ router.post("/signup", (req, res) => {
 
       const newUser = new User({
         email: req.body.email,
+        username: req.body.username,
         password: hash,
         token: uid2(32),
       });
-
       newUser.save().then((newDoc) => {
-        res.json({ result: true, token: newDoc.token });
+        
+        res.json({ result: true, token: newDoc.token, username: newDoc.username, email: newDoc.email });
+        
       });
     } else {
+      //verifier si token exist 
       // User already exists in database -tested-
       res.json({ result: false, error: "User already exists" });
     }
@@ -45,7 +59,7 @@ router.post("/signin", (req, res) => {
   // user not found or wrong password -tested-
   User.findOne({ email: req.body.email}).then((data) => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true, token: data.token });
+      res.json({ result: true, data});
     } else {
       res.json({ result: false, error: "User not found or wrong password" });
     }
