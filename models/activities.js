@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const activitySchema = mongoose.Schema({
-  //organizer : String,
   organizer : { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
   name : String,
   location: {
