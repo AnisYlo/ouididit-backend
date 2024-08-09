@@ -2,10 +2,27 @@ var express = require("express");
 var router = express.Router();
 
 require("../models/connection");
+const Participants = require("../models/participants")
 const User = require("../models/users");
 const { checkBody } = require("../modules/checkBody");
 const uid2 = require("uid2");
 const bcrypt = require("bcrypt");
+
+
+router.get('/:token/activities', (req,res) => {
+  User.findOne({token: req.params.token}).then((data)=> {
+    
+    if (data){
+      Participants.find({user: data._id}).select('activity').populate('activity').then((activities) => {
+        const allActivities = activities.map(object => {return object.activity})
+      res.json({result: true, allActivities})
+     })
+
+    }else{
+      res.json({result: false})
+    }
+  })
+})
 
 router.get("/:token", (req, res) => {
 User.findOne({token: req.params.token}).then((data) => {
@@ -38,7 +55,7 @@ router.post("/signup", (req, res) => {
       });
       newUser.save().then((newDoc) => {
         
-        res.json({ result: true, token: newDoc.token, username: newDoc.username, email: newDoc.email });
+        res.json({ result: true, newDoc });
         
       });
     } else {
