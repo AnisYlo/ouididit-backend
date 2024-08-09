@@ -7,7 +7,7 @@ const userSchema = mongoose.Schema({
   token: String,
   avatar: 
   { type: String,
-    default: '../assets/avatarDefault.png',
+    default: '',
   }
 
 });
