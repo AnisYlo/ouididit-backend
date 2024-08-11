@@ -14,8 +14,9 @@ router.get('/:token/activities', (req,res) => {
     
     if (data){
       Participants.find({user: data._id}).populate('activity').then((activities) => {
-        const allActivities = activities.map(object => {return object.activity})
-      res.json({result: true, allActivities})
+        let allActivities = activities.map(object => {return object.activity})
+        allActivities = allActivities.sort((a,b) => new Date(b.date) - new Date(a.date))
+      res.json({result: true, allActivities })
      })
 
     }else{
