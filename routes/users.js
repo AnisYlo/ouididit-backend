@@ -13,7 +13,7 @@ router.get('/:token/activities', (req,res) => {
   User.findOne({token: req.params.token}).then((data)=> {
     
     if (data){
-      Participants.find({user: data._id}).select('activity').populate('activity').then((activities) => {
+      Participants.find({user: data._id}).populate('activity').then((activities) => {
         const allActivities = activities.map(object => {return object.activity})
       res.json({result: true, allActivities})
      })
