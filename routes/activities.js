@@ -9,18 +9,17 @@ const { checkBody } = require("../modules/checkBody");
 
 // GET : activity informations //
 router.get("/:activityId", async (req, res) => {
-  if (req.params.activityId.length === 24) {
-    // mongoDB => _id length 24
-    Activity.findById(req.params.activityId)
-      .populate("organizer")
-      .then((activity) => {
-        const result = activity !== null;
-        res.json({ result, activity });
-      });
-  } else {
-    res.status(500).json({ result: false, error: "Wrong activity Id" });
+  if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
+    res.status(400).json({result: false, error: "Invalid activity Id"});
     return;
   }
+  
+  Activity.findById(req.params.activityId)
+    .populate("organizer")
+    .then((activity) => {
+      const result = activity !== null;
+      res.json({ result, activity });
+    });
 });
 
 // POST : create new activity //
