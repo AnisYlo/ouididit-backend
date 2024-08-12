@@ -93,7 +93,7 @@ router.get('/:chatId/:userToken', (req, res) => {
         path : 'messages',
         populate: { 
             path: 'user',
-            select: '-_id token', // Don't return user._id
+            select: '-_id token', // Don't return user._id, only token
         }
     })
     .then(chat => {

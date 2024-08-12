@@ -100,6 +100,10 @@ router.post("/participants/:activityId", (req, res) => {
 
 //route put pour mettre à jour les activités
 router.put("/:activityId", (req, res) => {
+  if (!checkBody(req.body, ["name", "date", "time", "description"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
   Activity.updateOne({_id: req.params.activityId},
     {
       $set: {
@@ -116,9 +120,8 @@ router.put("/:activityId", (req, res) => {
         description: req.body.description,
       },
     }).then((data) => {
-      console.log(data)
-      if (data.modifiedCount === 1) {
-        res.json({ result: true, message: "Activity updated" });
+      if (data.modifiedCount > 0) {
+        res.json({ result: true, message: "Activity updated", modifiedCount: data.modifiedCount });
       } else {
         res.json({ result: false, error: "Activity not updated" });
       }
