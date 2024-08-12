@@ -9,18 +9,17 @@ const { checkBody } = require("../modules/checkBody");
 
 // GET : activity informations //
 router.get("/:activityId", async (req, res) => {
-  if (req.params.activityId.length === 24) {
-    // mongoDB => _id length 24
-    Activity.findById(req.params.activityId)
-      .populate("organizer")
-      .then((activity) => {
-        const result = activity !== null;
-        res.json({ result, activity });
-      });
-  } else {
-    res.status(500).json({ result: false, error: "Wrong activity Id" });
+  if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
+    res.status(400).json({result: false, error: "Invalid activity Id"});
     return;
   }
+  
+  Activity.findById(req.params.activityId)
+    .populate("organizer")
+    .then((activity) => {
+      const result = activity !== null;
+      res.json({ result, activity });
+    });
 });
 
 // POST : create new activity //
@@ -101,6 +100,10 @@ router.post("/participants/:activityId", (req, res) => {
 
 //route put pour mettre à jour les activités
 router.put("/:activityId", (req, res) => {
+  if (!checkBody(req.body, ["name", "date", "time", "description"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
   Activity.updateOne({_id: req.params.activityId},
     {
       $set: {
@@ -117,9 +120,8 @@ router.put("/:activityId", (req, res) => {
         description: req.body.description,
       },
     }).then((data) => {
-      console.log(data)
-      if (data.modifiedCount === 1) {
-        res.json({ result: true, message: "Activity updated" });
+      if (data.modifiedCount > 0) {
+        res.json({ result: true, message: "Activity updated", modifiedCount: data.modifiedCount });
       } else {
         res.json({ result: false, error: "Activity not updated" });
       }
