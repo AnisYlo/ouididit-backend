@@ -115,6 +115,8 @@ router.get('/participants/:activityId', async (req, res) => {
         select: '-_id -password -token', // Don't return user._id && password
     });
 
+    console.log("participants => ", participants)
+
     // Vérifier si des participants ont été trouvés
     if (!participants || participants.length === 0) {
       return res.status(404).json({ message: 'Aucun participant trouvé pour cette activité' });
