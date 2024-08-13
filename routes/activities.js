@@ -98,6 +98,57 @@ router.post("/participants/:activityId", (req, res) => {
         .json({ result: false, error: "Error during added participants" });
 });
 
+// Route pour récupérer les participants d'une activité spécifique
+router.get('/activities/participants/:activityId', (req, res) => {
+  if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
+    res.status(400).json({result: false, error: "Invalid activity Id"});
+    return;
+}
+  try {
+    const { activityId } = req.params;
+
+    // Trouver les participants associés à l'ID de l'activité
+    const participants = 
+    Participant.find({ activity: activityId })
+    .populate('user');
+
+    // Vérifier si des participants ont été trouvés
+    if (!participants || participants.length === 0) {
+      return res.status(404).json({ message: 'Aucun participant trouvé pour cette activité' });
+    }
+
+    // Envoyer la liste des participants en réponse
+    res.status(200).json(participants);
+  } catch (error) {
+    // Gérer les erreurs éventuelles
+    console.error('Erreur lors de la récupération des participants:', error);
+    res.status(500).json({ message: 'Erreur serveur lors de la récupération des participants' });
+  }
+});
+
+// Route pour supprimer un participant par son ID
+router.delete('/participants/:participantId', (req, res) => {
+  try {
+    const { participantId } = req.params;
+
+    // Chercher et supprimer le participant par son ID
+    const deletedParticipant = 
+    Participant.findByIdAndDelete(participantId);
+
+    // Vérifiez si le participant a été trouvé et supprimé
+    if (!deletedParticipant) {
+      return res.status(404).json({ message: 'Participant non trouvé' });
+    }
+
+    // Envoyer une réponse de succès
+    res.status(200).json({ message: 'Participant supprimé avec succès' });
+  } catch (error) {
+    // Gérer les erreurs éventuelles
+    console.error('Erreur lors de la suppression du participant:', error);
+    res.status(500).json({ message: 'Erreur serveur lors de la suppression du participant' });
+  }
+});
+
 //route put pour mettre à jour les activités
 router.put("/:activityId", (req, res) => {
   if (!checkBody(req.body, ["name", "date", "time", "description"])) {
