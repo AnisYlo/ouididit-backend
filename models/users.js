@@ -4,7 +4,10 @@ const userSchema = mongoose.Schema({
   email: String,
   username: String,
   password: String,
-  token: String,
+  token: { 
+    type: String,
+    default: '',
+  },
   avatar: 
   { type: String,
     default: '',
