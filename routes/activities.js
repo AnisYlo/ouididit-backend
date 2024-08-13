@@ -99,7 +99,7 @@ router.post("/participants/:activityId", (req, res) => {
 });
 
 // Route pour récupérer les participants d'une activité spécifique
-router.get('/activities/participants/:activityId', (req, res) => {
+router.get('/participants/:activityId', async (req, res) => {
   if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
     res.status(400).json({result: false, error: "Invalid activity Id"});
     return;
@@ -109,8 +109,11 @@ router.get('/activities/participants/:activityId', (req, res) => {
 
     // Trouver les participants associés à l'ID de l'activité
     const participants = 
-    Participant.find({ activity: activityId })
-    .populate('user');
+    await Participant.find({ activity: activityId })
+    .populate({
+        path: 'user',
+        select: '-_id -password -token', // Don't return user._id && password
+    });
 
     // Vérifier si des participants ont été trouvés
     if (!participants || participants.length === 0) {
