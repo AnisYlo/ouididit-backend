@@ -44,8 +44,8 @@ router.post("/signup", (req, res) => {
 
   // Check if the user has not already been registered -tested-
   User.findOne({ email: req.body.email }).then((data) => {
+    const hash = bcrypt.hashSync(req.body.password, 10);
     if (data === null) {
-      const hash = bcrypt.hashSync(req.body.password, 10);
 
       const newUser = new User({
         email: req.body.email,
@@ -53,13 +53,23 @@ router.post("/signup", (req, res) => {
         password: hash,
         token: uid2(32),
       });
-      newUser.save().then((newDoc) => {
-        
-        res.json({ result: true, newDoc });
-        
+      newUser.save().then((newDoc) => {        
+        res.json({ result: true, newDoc });        
       });
     } else {
       //verifier si token exist 
+      if(data.token ===''){
+        User.findOneAndUpdate({_id : data._id},{
+          $set:{
+            username: req.body.username,
+            password: hash,
+            token: uid2(32),
+          }
+        }, {new: true})
+        .then((newDoc) => {        
+          res.json({ result: true, newDoc });       
+        });
+      }else
       // User already exists in database -tested-
       res.json({ result: false, error: "User already exists" });
     }
