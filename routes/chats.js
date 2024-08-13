@@ -199,7 +199,7 @@ router.post('/:chatId/:userToken', (req, res) => {
             const pusherMessage = {
                 text : messageAdded.message,
                 userToken : req.params.userToken,
-                userName : req.params.username,
+                userName : req.body.username,
                 userAvatar : req.body.avatar,
                 createdAt: messageAdded.createdAt,
                 id: messageAdded._id,
