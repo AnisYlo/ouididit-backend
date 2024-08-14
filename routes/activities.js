@@ -56,6 +56,7 @@ router.post("/participants/:activityId", (req, res) => {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
+  
   // Store error and mail in addError
   let addError = { result: true, participants: [] };
 
@@ -98,6 +99,36 @@ router.post("/participants/:activityId", (req, res) => {
         .json({ result: false, error: "Error during added participants" });
 });
 
+
+// GET : Participation status for user in activity //
+router.get('/participants/:activityId/:userToken', (req, res) => {
+  if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
+    res.status(400).json({result: false, error: "Invalid activity Id"});
+    return;
+  }
+
+  if(req.params.userToken.length !== 32){ 
+    res.status(400).json({result: false, error: "Invalid user token"});
+    return;
+  }
+
+  User.findOne({token : req.params.userToken}).select('_id')
+  .then (userData =>{
+    if (userData !== null) { return userData._id; }
+        else res.status(404).json({result: false, error: "User not found"});
+  })
+  .then (userId => {
+    Participant.findOne({user : userId, activity: req.params.activityId}).select('status')
+    .then(participantStatus =>{
+      if (participantStatus !== null) 
+        res.status(200).json({result: true, status : participantStatus.status});
+      else 
+        res.status(404).json({result: false, error: "Participation not found"});
+    });
+  });
+});
+
+
 // Route pour récupérer les participants d'une activité spécifique
 router.get('/participants/:activityId', async (req, res) => {
   if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
@@ -112,7 +143,7 @@ router.get('/participants/:activityId', async (req, res) => {
     await Participant.find({ activity: activityId })
     .populate({
         path: 'user',
-        select: '-_id -password -token', // Don't return user._id && password
+        select: '-_id -password', // Don't return user._id && password
     });
 
     console.log("participants => ", participants)
