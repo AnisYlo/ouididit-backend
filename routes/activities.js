@@ -17,6 +17,7 @@ router.get("/:activityId", async (req, res) => {
   Activity.findById(req.params.activityId)
     .populate("organizer")
     .then((activity) => {
+      console.log(activity)
       const result = activity !== null;
       res.json({ result, activity });
     });
@@ -146,7 +147,7 @@ router.get('/participants/:activityId', async (req, res) => {
         select: '-_id -password', // Don't return user._id && password
     });
 
-    console.log("participants => ", participants)
+    
 
     // Vérifier si des participants ont été trouvés
     if (!participants || participants.length === 0) {
