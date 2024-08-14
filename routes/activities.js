@@ -56,47 +56,62 @@ router.post("/participants/:activityId", (req, res) => {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
-  
-  // Store error and mail in addError
+
+  // Store error and participant info in addError
   let addError = { result: true, participants: [] };
 
-  // For each participant in array
-  req.body.participants.map((participant) => {
-    User.findOne({ email: participant.email })
-      .select("_id")
+  // Create an array of promises to handle all participants
+  const participantPromises = req.body.participants.map((participant) => {
+    return User.findOne({ email: participant.email })
       .then((data) => {
         if (data === null) {
-          // If user not exist, create them in DB
+          // If user does not exist, create them in DB
           const newUser = new User({
             email: participant.email,
           });
-          newUser.save().then((newUser) => {
-            return newUser._id;
-          });
+          return newUser.save().then((newUser) => newUser);
         } else {
-          return data._id;
+          return data;
         }
       })
-      .then((participantId) => {
+      .then((userDb) => {
         const newParticipant = new Participant({
-          user: participantId,
+          user: userDb.Id,
           activity: req.params.activityId,
           status: participant.status,
         });
-        newParticipant.save().then((data) => {
-          // Check add participant, if error : save participant who create error
+        return newParticipant.save().then((data) => {
           if (data === null) {
             addError.result = false;
             addError.participants.push(participant.email);
+            return null;
+          } else {
+            return {
+              email : userDb.email,
+              avatar : userDb.avatar,
+              username : userDb.username,
+              status : participant.status,
+            }
           }
         });
       });
   });
-  addError.result
-    ? res.json({ result: true })
-    : res
-        .status(500)
-        .json({ result: false, error: "Error during added participants" });
+
+  // Wait for all promises to resolve
+  Promise.all(participantPromises)
+    .then(results => {
+      // Filter out any null results (i.e., failed participants)
+      const successfulParticipants = results.filter(result => result !== null);
+
+      if (addError.result) {
+        res.json({ result: true, participants: successfulParticipants });
+      } else {
+        res.status(500).json({ result: false, error: "Error during adding participants", participants: addError.participants });
+      }
+    })
+    .catch((error) => {
+      res.status(500).json({ result: false, error: "An unexpected error occurred", details: error });
+    });
 });
 
 
@@ -143,7 +158,7 @@ router.get('/participants/:activityId', async (req, res) => {
     await Participant.find({ activity: activityId })
     .populate({
         path: 'user',
-        select: '-_id -password', // Don't return user._id && password
+        select: '-_id -password -token', // Don't return user._id && password && token
     });
 
     console.log("participants => ", participants)
