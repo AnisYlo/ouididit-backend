@@ -9,15 +9,16 @@ const { checkBody } = require("../modules/checkBody");
 
 // GET : activity informations //
 router.get("/:activityId", async (req, res) => {
-  if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
-    res.status(400).json({result: false, error: "Invalid activity Id"});
+  if (req.params.activityId.length !== 24) {
+    // mongoDB => _id length 24
+    res.status(400).json({ result: false, error: "Invalid activity Id" });
     return;
   }
-  
+
   Activity.findById(req.params.activityId)
     .populate("organizer")
     .then((activity) => {
-      console.log(activity)
+      console.log(activity);
       const result = activity !== null;
       res.json({ result, activity });
     });
@@ -88,11 +89,12 @@ router.post("/participants/:activityId", (req, res) => {
             return null;
           } else {
             return {
-              email : userDb.email,
-              avatar : userDb.avatar,
-              username : userDb.username,
-              status : participant.status,
-            }
+              participantId: userDb._id,
+              email: userDb.email,
+              avatar: userDb.avatar,
+              username: userDb.username,
+              status: participant.status,
+            };
           }
         });
       });
@@ -100,125 +102,165 @@ router.post("/participants/:activityId", (req, res) => {
 
   // Wait for all promises to resolve
   Promise.all(participantPromises)
-    .then(results => {
+    .then((results) => {
       // Filter out any null results (failed participants)
-      const successfulParticipants = results.filter(result => result !== null);
+      const successfulParticipants = results.filter(
+        (result) => result !== null
+      );
 
       if (addError.result) {
         res.json({ result: true, participants: successfulParticipants });
       } else {
-        res.status(500).json({ result: false, error: "Error during adding participants", participants: addError.participants });
+        res
+          .status(500)
+          .json({
+            result: false,
+            error: "Error during adding participants",
+            participants: addError.participants,
+          });
       }
     })
     .catch((error) => {
-      res.status(500).json({ result: false, error: "An unexpected error occurred", details: error });
+      res
+        .status(500)
+        .json({
+          result: false,
+          error: "An unexpected error occurred",
+          details: error,
+        });
     });
 });
 
 // GET : Participation status for user in all activity //
-router.get('/participants/all/:userToken', (req, res) => {
-
-  if(req.params.userToken.length !== 32){ 
-    res.status(400).json({result: false, error: "Invalid user token"});
+router.get("/participants/all/:userToken", (req, res) => {
+  if (req.params.userToken.length !== 32) {
+    res.status(400).json({ result: false, error: "Invalid user token" });
     return;
   }
 
-  User.findOne({token : req.params.userToken}).select('_id')
-  .then (userData =>{
-    if (userData !== null) { return userData._id; }
-        else res.status(404).json({result: false, error: "User not found"});
-  })
-  .then (userId => {
-    Participant.find({user : userId}).select('status activity')
-    .then(userStatus =>{
-      if (userStatus !== null) 
-        res.status(200).json({result: true, status : userStatus});
-      else 
-        res.status(404).json({result: false, error: "Participation not found"});
+  User.findOne({ token: req.params.userToken })
+    .select("_id")
+    .then((userData) => {
+      if (userData !== null) {
+        return userData._id;
+      } else res.status(404).json({ result: false, error: "User not found" });
+    })
+    .then((userId) => {
+      Participant.find({ user: userId })
+        .select("status activity")
+        .then((userStatus) => {
+          if (userStatus !== null)
+            res.status(200).json({ result: true, status: userStatus });
+          else
+            res
+              .status(404)
+              .json({ result: false, error: "Participation not found" });
+        });
     });
-  });
 });
 
 // GET : Participation status for user in activity //
-router.get('/participants/:activityId/:userToken', (req, res) => {
-  if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
-    res.status(400).json({result: false, error: "Invalid activity Id"});
+router.get("/participants/:activityId/:userToken", (req, res) => {
+  if (req.params.activityId.length !== 24) {
+    // mongoDB => _id length 24
+    res.status(400).json({ result: false, error: "Invalid activity Id" });
     return;
   }
 
-  if(req.params.userToken.length !== 32){ 
-    res.status(400).json({result: false, error: "Invalid user token"});
+  if (req.params.userToken.length !== 32) {
+    res.status(400).json({ result: false, error: "Invalid user token" });
     return;
   }
 
-  User.findOne({token : req.params.userToken}).select('_id')
-  .then (userData =>{
-    if (userData !== null) { return userData._id; }
-        else res.status(404).json({result: false, error: "User not found"});
-  })
-  .then (userId => {
-    Participant.findOne({user : userId, activity: req.params.activityId}).select('status')
-    .then(participantStatus =>{
-      if (participantStatus !== null) 
-        res.status(200).json({result: true, status : participantStatus.status});
-      else 
-        res.status(404).json({result: false, error: "Participation not found"});
+  User.findOne({ token: req.params.userToken })
+    .select("_id")
+    .then((userData) => {
+      if (userData !== null) {
+        return userData._id;
+      } else res.status(404).json({ result: false, error: "User not found" });
+    })
+    .then((userId) => {
+      Participant.findOne({ user: userId, activity: req.params.activityId })
+        .select("status")
+        .then((participantStatus) => {
+          if (participantStatus !== null)
+            res
+              .status(200)
+              .json({ result: true, status: participantStatus.status });
+          else
+            res
+              .status(404)
+              .json({ result: false, error: "Participation not found" });
+        });
     });
-  });
 });
 
-
 // Route pour récupérer les participants d'une activité spécifique
-router.get('/participants/:activityId', async (req, res) => {
-  if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
-    res.status(400).json({result: false, error: "Invalid activity Id"});
+router.get("/participants/:activityId", async (req, res) => {
+  if (req.params.activityId.length !== 24) {
+    // mongoDB => _id length 24
+    res.status(400).json({ result: false, error: "Invalid activity Id" });
     return;
-}
+  }
   try {
     const { activityId } = req.params;
 
     // Trouver les participants associés à l'ID de l'activité
-    const participants = 
-    await Participant.find({ activity: activityId })
-    .populate({
-        path: 'user',
-        select: '-_id -password -token', // Don't return user._id && password && token
+    const participants = await Participant.find({
+      activity: activityId,
+    }).populate({
+      path: "user",
+      select: "-password -token", // Don't return password && token
     });
 
     // Vérifier si des participants ont été trouvés
     if (!participants || participants.length === 0) {
-      return res.status(404).json({ message: 'Aucun participant trouvé pour cette activité' });
+      return res
+        .status(404)
+        .json({ message: "Aucun participant trouvé pour cette activité" });
     }
 
     // Envoyer la liste des participants en réponse
     res.status(200).json(participants);
   } catch (error) {
     // Gérer les erreurs éventuelles
-    console.error('Erreur lors de la récupération des participants:', error);
-    res.status(500).json({ message: 'Erreur serveur lors de la récupération des participants' });
+    console.error("Erreur lors de la récupération des participants:", error);
+    res
+      .status(500)
+      .json({
+        message: "Erreur serveur lors de la récupération des participants",
+      });
   }
 });
 
 // Route pour supprimer un participant par son ID
-router.delete('/participants/:participantId', (req, res) => {
-  try {
-    const { participantId } = req.params;
+router.delete("/participants/:participantId", async (req, res) => {
+try {    
+  const { participantId } = req.params;
+    console.log("id du participant ===>", participantId);
 
     // Chercher et supprimer le participant par son ID
-    const deletedParticipant = 
-    Participant.findByIdAndDelete(participantId);
+    const  deletedParticipant = await Participant.deleteOne({ user : participantId });
 
+    console.log("participant trouvé obj ===>", deletedParticipant)
     // Vérifiez si le participant a été trouvé et supprimé
     if (!deletedParticipant) {
-      return res.status(404).json({ message: 'Participant non trouvé' });
+      return res.status(404).json({ message: "Participant non trouvé" });
     }
 
     // Envoyer une réponse de succès
-    res.status(200).json({ message: 'Participant supprimé avec succès' });
+    if (deletedParticipant.deletedCount) {
+      console.log('======>')
+      res.status(200).json({ message: "Participant supprimé avec succès"});
+    }
   } catch (error) {
     // Gérer les erreurs éventuelles
-    console.error('Erreur lors de la suppression du participant:', error);
-    res.status(500).json({ message: 'Erreur serveur lors de la suppression du participant' });
+    console.error("Erreur lors de la suppression du participant:", error);
+    res
+      .status(500)
+      .json({
+        message: "Erreur serveur lors de la suppression du participant",
+      });
   }
 });
 
@@ -228,29 +270,34 @@ router.put("/:activityId", (req, res) => {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
-  Activity.updateOne({_id: req.params.activityId},
+  Activity.updateOne(
+    { _id: req.params.activityId },
     {
       $set: {
         name: req.body.name,
         location: {
-          street : req.body.street,
-          postalCode : req.body.postalCode,
-          city : req.body.city,
-          lat : req.body.lat,
-          lng : req.body.lng,
+          street: req.body.street,
+          postalCode: req.body.postalCode,
+          city: req.body.city,
+          lat: req.body.lat,
+          lng: req.body.lng,
         },
         date: req.body.date,
         time: req.body.time,
         description: req.body.description,
       },
-    }).then((data) => {
-      if (data.modifiedCount > 0) {
-        res.json({ result: true, message: "Activity updated", modifiedCount: data.modifiedCount });
-      } else {
-        res.json({ result: false, error: "Activity not updated" });
-      }
-    });
+    }
+  ).then((data) => {
+    if (data.modifiedCount > 0) {
+      res.json({
+        result: true,
+        message: "Activity updated",
+        modifiedCount: data.modifiedCount,
+      });
+    } else {
+      res.json({ result: false, error: "Activity not updated" });
+    }
+  });
 });
-
 
 module.exports = router;

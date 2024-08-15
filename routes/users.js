@@ -13,7 +13,13 @@ router.get('/:token/activities', (req,res) => {
   User.findOne({token: req.params.token}).then((data)=> {
     
     if (data){
-      Participants.find({user: data._id}).populate('activity').then((activities) => {
+      Participants.find({user: data._id})
+      .populate('activity')
+      .populate({
+        path: 'activity.organizer',
+        select: '-_id -password',  //Don't populate id and password
+      })
+      .then((activities) => {
         let allActivities = activities.map(object => {return object.activity})
         allActivities = allActivities.sort((a,b) => new Date(b.date) - new Date(a.date))
       res.json({result: true, allActivities })
