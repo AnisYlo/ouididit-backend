@@ -23,8 +23,6 @@ router.get('/:token/activities', (req,res) => {
         },
       })
       .then((activities) => {
-
-        console.log("activities ROUTE=============",activities[0].activity.organizer)
         let allActivities = activities.map(object => {return object.activity})
         allActivities = allActivities.sort((a,b) => new Date(b.date) - new Date(a.date))
       res.json({result: true, allActivities })
