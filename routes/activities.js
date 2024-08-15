@@ -17,7 +17,7 @@ router.get("/:activityId", async (req, res) => {
   Activity.findById(req.params.activityId)
     .populate("organizer")
     .then((activity) => {
-      console.log(activity)
+      // console.log('route backend activity', activity)
       const result = activity !== null;
       res.json({ result, activity });
     });

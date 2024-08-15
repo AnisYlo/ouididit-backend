@@ -9,11 +9,22 @@ const uid2 = require("uid2");
 const bcrypt = require("bcrypt");
 
 
+
 router.get('/:token/activities', (req,res) => {
   User.findOne({token: req.params.token}).then((data)=> {
     
     if (data){
-      Participants.find({user: data._id}).populate('activity').then((activities) => {
+      Participants.find({user: data._id})
+      .populate({
+        path: 'activity',
+        populate: {
+          path: 'organizer',
+          select: '-_id -password', // Exclude _id and password
+        },
+      })
+      .then((activities) => {
+
+        console.log("activities ROUTE=============",activities[0].activity.organizer)
         let allActivities = activities.map(object => {return object.activity})
         allActivities = allActivities.sort((a,b) => new Date(b.date) - new Date(a.date))
       res.json({result: true, allActivities })
