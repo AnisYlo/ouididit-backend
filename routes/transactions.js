@@ -7,11 +7,14 @@ const User = require('../models/users');
 const { checkBody } = require('../modules/checkBody');
 
 // GET : Retrived all transaction for activity //
-router.get('/activity/:activityId', async (req, res) => {
-        const { activityId } = req.params;
+router.get('/:activityId', async (req, res) => {
+    if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
+        res.status(400).json({result: false, error: "Invalid activity Id"});
+        return;
+    }
 
         // Recherche de toutes les transactions associées à une activité spécifique
-        const transactions = await Transaction.find({ activity: activityId })
+        const transactions = await Transaction.find({ activity: req.params.activityId })
         .populate({
             path : 'user',
             select: '-_id -password', // Don't return user._id && password
@@ -26,25 +29,30 @@ router.get('/activity/:activityId', async (req, res) => {
 
 
 // POST : Create new transaction //
-router.post('/:userToken', async (req, res) => {
-    if (!checkBody(req.body, ["participants"])) {
+router.post('/:activityId', async (req, res) => {
+    if (!checkBody(req.body, ["userToken", 'amount'])) {
         res.json({ result: false, error: "Missing or empty fields" });
         return;
-      }
+    }
 
-    if(req.params.userToken.length !== 32){ 
+      if(req.params.activityId.length !== 24){ // mongoDB => _id length 24
+        res.status(400).json({result: false, error: "Invalid activity Id"});
+        return;
+    }
+
+    if(req.body.userToken.length !== 32){ 
         res.status(400).json({result: false, error: "Invalid user token"});
         return;
       }
 
-    const user = await User.findOne({ token: req.params.userToken });
+    const user = await User.findOne({ token: req.body.userToken });
     if (!user) {
         return res.status(404).json({result: false, error: "User not found"});
     }
 
     const newTransaction = new Transaction({
             user: user._id,
-            activity: req.body.activity,
+            activity: req.params.activityId,
             amount: req.body.amount
         });
 
