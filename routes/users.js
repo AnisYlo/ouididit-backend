@@ -15,19 +15,12 @@ router.get('/:token/activities', (req,res) => {
     
     if (data){
       Participants.find({user: data._id})
-<<<<<<< HEAD
       .populate({
         path: 'activity',
         populate: {
           path: 'organizer',
           select: '-_id -password', // Exclude _id and password
         },
-=======
-      .populate('activity')
-      .populate({
-        path: 'activity.organizer',
-        select: '-_id -password',  //Don't populate id and password
->>>>>>> backmorgan
       })
       .then((activities) => {
         let allActivities = activities.map(object => {return object.activity})

@@ -18,11 +18,7 @@ router.get("/:activityId", async (req, res) => {
   Activity.findById(req.params.activityId)
     .populate("organizer")
     .then((activity) => {
-<<<<<<< HEAD
       // console.log('route backend activity', activity)
-=======
-      console.log(activity);
->>>>>>> backmorgan
       const result = activity !== null;
       res.json({ result, activity });
     });
