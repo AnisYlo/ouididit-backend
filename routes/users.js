@@ -36,6 +36,16 @@ User.findOne({token: req.params.token}).then((data) => {
 
 }) 
 
+router.get("/info/:token", (req, res) => {
+  User.findOne({token: req.params.token}).then((data) => {
+    if (data){
+      res.json({result: true, user: data})
+    }else{
+      res.json({result: false})
+    }
+  })
+  
+  }) 
 //sign up and verify if missing or empty fields -tested-
 router.post("/signup", (req, res) => {
   if (!checkBody(req.body, ["email", "password", "username"])) {
