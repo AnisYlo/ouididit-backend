@@ -33,6 +33,34 @@ router.post('/', (req, res) => {
     });
 });
 
+// POST: Retrive chats info for each [activities]
+router.post('/byActivities', async (req, res) => {
+    const { activityIds } = req.body;
+  
+    if (!Array.isArray(activityIds) || !activityIds.length === 24 ) {
+      return res.status(400).json({ result: false, error: "Invalid activity IDs" });
+    }
+  
+    try {
+      // Retrieve chats for each activity
+      const chats = await Chat.find({ activity: { $in: activityIds } })
+      .populate({
+        path: 'activity', 
+        select: 'name',
+      })
+      .populate({
+        path: 'messages.user',
+        select: '-_id -password',  //Don't populate id and password
+      });
+  
+      res.status(200).json({ result: true, chats });
+  
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ result: false, error: "Internal Server Error" });
+    }
+});
+
 // GET : chat history //
 router.get('/:chatId', (req, res) => {
     if(req.params.chatId.length !== 24){ // mongoDB => _id length 24
@@ -50,7 +78,8 @@ router.get('/:chatId', (req, res) => {
     })
     .then(chat => {
         const result = chat !== null;
-        res.json({ result, messages : chat.messages });
+        const messages = chat.messages.length !== 0 ? chat.messages : null
+        res.json({ result, messages });
     });
 });
 

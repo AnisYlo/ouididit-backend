@@ -77,7 +77,7 @@ router.post("/participants/:activityId", (req, res) => {
       })
       .then((userDb) => {
         const newParticipant = new Participant({
-          user: userDb.Id,
+          user: userDb._id,
           activity: req.params.activityId,
           status: participant.status,
         });
@@ -101,7 +101,7 @@ router.post("/participants/:activityId", (req, res) => {
   // Wait for all promises to resolve
   Promise.all(participantPromises)
     .then(results => {
-      // Filter out any null results (i.e., failed participants)
+      // Filter out any null results (failed participants)
       const successfulParticipants = results.filter(result => result !== null);
 
       if (addError.result) {
@@ -115,6 +115,29 @@ router.post("/participants/:activityId", (req, res) => {
     });
 });
 
+// GET : Participation status for user in all activity //
+router.get('/participants/all/:userToken', (req, res) => {
+
+  if(req.params.userToken.length !== 32){ 
+    res.status(400).json({result: false, error: "Invalid user token"});
+    return;
+  }
+
+  User.findOne({token : req.params.userToken}).select('_id')
+  .then (userData =>{
+    if (userData !== null) { return userData._id; }
+        else res.status(404).json({result: false, error: "User not found"});
+  })
+  .then (userId => {
+    Participant.find({user : userId}).select('status activity')
+    .then(userStatus =>{
+      if (userStatus !== null) 
+        res.status(200).json({result: true, status : userStatus});
+      else 
+        res.status(404).json({result: false, error: "Participation not found"});
+    });
+  });
+});
 
 // GET : Participation status for user in activity //
 router.get('/participants/:activityId/:userToken', (req, res) => {
@@ -161,8 +184,6 @@ router.get('/participants/:activityId', async (req, res) => {
         path: 'user',
         select: '-_id -password -token', // Don't return user._id && password && token
     });
-
-    
 
     // Vérifier si des participants ont été trouvés
     if (!participants || participants.length === 0) {
