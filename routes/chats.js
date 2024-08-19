@@ -130,7 +130,7 @@ router.get('/:chatId/:userToken', (req, res) => {
         const lastLogoff = chat.messages.filter(msg => msg.type === 'Event' && msg.user.token === req.params.userToken)
         
         let newMessagesCount = 0;
-        // If user wasn't logoff from the chat all messages are new
+        // If user never logoff from the chat all messages are new
         if(lastLogoff.length === 0){
             newMessagesCount = chat.messages.filter(msg => msg.type === 'Message').length;
         } else {
@@ -180,6 +180,7 @@ router.put('/:chatId/:userToken', (req, res) => {
             .then(data => {
                 if (data !== null) { // Connect user to PUSHER
                     console.log("User join =>",user.username);
+                    // pusher.trigger(chatName, event, user)
                     pusher.trigger(req.params.chatId, 'join', {userName: user.username});
                     res.json({ result: true });
                 } else{
@@ -212,13 +213,15 @@ router.post('/:chatId/:userToken', (req, res) => {
     .then(data => {
         if (data !== null) { return data._id }
         else res.status(404).json({result: false, error: "User not found"})
-    })// Send new message
+    })
+    // Send new message
     .then(userId =>{
         const newMessage = {
             user: userId,
             message: req.body.messageText,
             type: 'Message',
-        }; // Save new message in DB
+        }; 
+        // Save new message in DB
         Chat.findOneAndUpdate({_id:req.params.chatId},{
             $push :{messages:newMessage}
         }, {new: true})
@@ -232,7 +235,9 @@ router.post('/:chatId/:userToken', (req, res) => {
                 userAvatar : req.body.avatar,
                 createdAt: messageAdded.createdAt,
                 id: messageAdded._id,
-            } // Send message to Pusher
+            } 
+            // Send message to Pusher            
+            // pusher.trigger(chatName, event, messageInfos)
             pusher.trigger(req.params.chatId, 'message', pusherMessage);
             res.json({ result: true });
         })
@@ -265,7 +270,8 @@ router.delete('/:chatId/:userToken', (req, res) => {
         Chat.updateOne(
             {_id:req.params.chatId},
             { $pull: { messages: { type: "Event", user: user._id } } }
-        )// After send new leave event
+        )
+        // After send new leave event
         .then(()=>{
             const newMessage = {
                 user: user.id,
@@ -274,9 +280,11 @@ router.delete('/:chatId/:userToken', (req, res) => {
             };
             Chat.findOneAndUpdate({_id:req.params.chatId},{
                 $push :{messages:newMessage}
-            })// Disconect user from PUSHER
+            })
+            // Disconect user from PUSHER
             .then(()=>{
                 console.log("User leave =>",user.username);
+                // pusher.trigger(chatName, event, user)
                 pusher.trigger(req.params.chatId, 'leave', {username: user.username});
                 res.json({ result: true });
             })
