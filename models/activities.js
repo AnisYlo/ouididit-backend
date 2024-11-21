@@ -3,13 +3,7 @@ const mongoose = require('mongoose');
 const activitySchema = mongoose.Schema({
   organizer : { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
   name : String,
-  location: {
-    street : {type : String, default: ''},
-    postalCode : {type : Number, default: null},
-    city : {type : String, default: ''},
-    lat : {type : Number, default: null},
-    lng : {type : Number, default: null},
-    },
+  location: {type : String, default: ''},
   date : Date,
   time: Number,
   description : {type : String, default: ''},

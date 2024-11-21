@@ -8,7 +8,7 @@ const Participant = require("../models/participants");
 const { checkBody } = require("../modules/checkBody");
 
 // GET : activity informations //
-router.get("/:activityId", async (req, res) => {
+router.get("/:activityId/:userToken", async (req, res) => {
   if (req.params.activityId.length !== 24) {
     // mongoDB => _id length 24
     res.status(400).json({ result: false, error: "Invalid activity Id" });
@@ -195,7 +195,7 @@ router.get("/participants/:activityId/:userToken", (req, res) => {
     });
 });
 
-// Route pour récupérer les participants d'une activité spécifique
+// Route pour récupérer les participants d'une activité
 router.get("/participants/:activityId", async (req, res) => {
   if (req.params.activityId.length !== 24) {
     // mongoDB => _id length 24
@@ -265,8 +265,8 @@ try {
 });
 
 //route put pour mettre à jour les activités
-router.put("/:activityId", (req, res) => {
-  if (!checkBody(req.body, ["name", "date", "time", "description"])) {
+router.put("/:activityId/:userToken", (req, res) => {
+  if (!checkBody(req.body, ["name", "location", "date", "time", "description"])) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
@@ -275,13 +275,7 @@ router.put("/:activityId", (req, res) => {
     {
       $set: {
         name: req.body.name,
-        location: {
-          street: req.body.street,
-          postalCode: req.body.postalCode,
-          city: req.body.city,
-          lat: req.body.lat,
-          lng: req.body.lng,
-        },
+        location: req.body.location,
         date: req.body.date,
         time: req.body.time,
         description: req.body.description,
