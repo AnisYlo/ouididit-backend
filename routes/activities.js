@@ -264,34 +264,53 @@ try {
   }
 });
 
-//route put pour mettre à jour les activités
-router.put("/:activityId/:userToken", (req, res) => {
-  if (!checkBody(req.body, ["name", "location", "date", "time", "description"])) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
+// PUT : Update activity information
+router.put("/:activityId/:userToken", async (req, res) => {
+  // Vérifier la longueur de l'ID MongoDB (_id doit être une chaîne de 24 caractères)
+  if (req.params.activityId.length !== 24) {
+    return res.status(400).json({ result: false, error: "Invalid activity Id" });
   }
-  Activity.updateOne(
-    { _id: req.params.activityId },
-    {
-      $set: {
-        name: req.body.name,
-        location: req.body.location,
-        date: req.body.date,
-        time: req.body.time,
-        description: req.body.description,
-      },
+
+  try {
+    // Récupérer l'activité pour vérifier son existence
+    const activity = await Activity.findById(req.params.activityId);
+    if (!activity) {
+      return res.status(404).json({ result: false, error: "Activity not found" });
     }
-  ).then((data) => {
-    if (data.modifiedCount > 0) {
-      res.json({
-        result: true,
-        message: "Activity updated",
-        modifiedCount: data.modifiedCount,
-      });
+
+    const userToken = req.params.userToken;
+    if (!userToken) {
+      return res.status(401).json({ result: false, error: "Unauthorized: Invalid token" });
+    }
+
+    // Vérifier si l'utilisateur est autorisé à modifier cette activité
+    if (activity.organizer.toString() !== userToken) {
+      return res.status(403).json({ result: false, error: "Forbidden: You cannot update this activity" });
+    }
+
+    // Mettre à jour les champs autorisés
+    const allowedUpdates = ["name", "location", "date", "time", "description"];
+    const updates = {};
+    allowedUpdates.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    const updateResult = await Activity.updateOne(
+      { _id: req.params.activityId },
+      { $set: updates }
+    );
+
+    if (updateResult.modifiedCount > 0) {
+      res.json({ result: true, message: "Activity updated", modifiedCount: updateResult.modifiedCount });
     } else {
-      res.json({ result: false, error: "Activity not updated" });
+      res.status(400).json({ result: false, error: "Activity not updated" });
     }
-  });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ result: false, error: "Internal server error" });
+  }
 });
 
 module.exports = router;
