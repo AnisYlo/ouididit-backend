@@ -292,6 +292,7 @@ router.put("/:activityId/:userToken", async (req, res) => {
     const allowedUpdates = ["name", "location", "date", "time", "description"];
     const updates = {};
     allowedUpdates.forEach((field) => {
+      // Si les champs sont remplis alors on pourra les modifier
       if (req.body[field] !== undefined) {
         updates[field] = req.body[field];
       }
@@ -301,7 +302,7 @@ router.put("/:activityId/:userToken", async (req, res) => {
       { _id: req.params.activityId },
       { $set: updates }
     );
-
+// Vérification de la mise à jour de l'activité, si un input est modifié alors il affichera le message true avec la valeur modifiée
     if (updateResult.modifiedCount > 0) {
       res.json({ result: true, message: "Activity updated", modifiedCount: updateResult.modifiedCount });
     } else {
